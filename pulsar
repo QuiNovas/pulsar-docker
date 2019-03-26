@@ -1,11 +1,30 @@
 #!/bin/bash
 
-MEM_OPTS="-Xms2g -Xmx2g -XX:MaxDirectMemorySize=4g"
-GC_OPTS=" -XX:+UseG1GC -XX:MaxGCPauseMillis=10 -XX:+ParallelRefProcEnabled -XX:+UnlockExperimentalVMOptions -XX:+AggressiveOpts -XX:+DoEscapeAnalysis -XX:ParallelGCThreads=32 -XX:ConcGCThreads=32 -XX:G1NewSizePercent=50 -XX:+DisableExplicitGC -XX:-ResizePLAB"
+function usage(){
+  cat<<EOF
 
-# Extra options to be passed to the jvm
-NETTY_OPTS=" -Dio.netty.leakDetectionLevel=disabled -Dio.netty.recycler.maxCapacity.default=1000 -Dio.netty.recycler.linkCapacity=1024"
-CLASSPATH=$(find /pulsar/lib/ /pulsar/offloaders -name *.jar | grep -v presto | grep -v 'logging.log4j-log4j-slf4j-impl-2.10.0.jar' | tr '\n' ':' | sed 's/:$//'):/pulsar/instances/java-instance.jar:$EXTRA_CLASSPATH
+    Run pulsar broker, client, or admin tool.
+
+    Usage: pulsar <option> [option args]
+    Commands:
+      -broker [args] Start the pulsar broker using config file /conf/pulsar.conf
+      -client [args] Start the pulsar client using config file /conf/client.conf
+      -admin  [args] Start the pulsar admin client using config file /conf/client.conf
+EOF
+}
+
+IPSTACK="-Djava.net.preferIPv4Stack=true"
+[ ! -z "${PREFER_IPV6}" ] && IPSTACK="-Djava.net.preferIPv4Stack=false
+[ -z "${MIN_HEAP}" ] && MIN_HEAP=2g
+[ -z "${MAX_HEAP}" ] && MAX_HEAP=2g
+[ -z "${MAX_DIRECT_MEMORY}" ] && MAX_DIRECT_MEMORY=4g
+[ -z "${MEM_OPTS}" ] && MEM_OPTS="-Xms${MIN_HEAP} -Xmx${MAX_HEAP} -XX:MaxDirectMemorySize=${MAX_DIRECT_MEMORY}"
+[ -z "${GC_OPTS}" ] && GC_OPTS="-XX:+UseG1GC -XX:MaxGCPauseMillis=10 -XX:+ParallelRefProcEnabled -XX:+UnlockExperimentalVMOptions -XX:+AggressiveOpts -XX:+DoEscapeAnalysis -XX:ParallelGCThreads=32 -XX:ConcGCThreads=32 -XX:G1NewSizePercent=50 -XX:+DisableExplicitGC -XX:-ResizePLAB"
+[ -z "${NETTY_OPTS}" ] && NETTY_OPTS="-Dio.netty.leakDetectionLevel=disabled -Dio.netty.recycler.maxCapacity.default=1000 -Dio.netty.recycler.linkCapacity=1024"
+[ -z "${MAX_BUFFER}" ] && MAX_BUFFER=10485760
+[ -z "${PROMETHEUS_PORT}" ] && PROMETHEUS_PORT=7070
+[ -z "${WHITHOUT_PROMETHEUS}" ] && PROMETHEUS="-javaagent:/usr/bin/jmx_prometheus_javaagent-0.11.0.jar=${PROMETHEUS_PORT}:/config/prometheus.yml
+CLASSPATH=$(find /pulsar/lib/ /pulsar/offloaders -name *.jar | grep -v presto | grep -v 'logging.log4j-log4j-slf4j-impl-2.10.0.jar' | tr '\n' ':' | sed 's/:$//'):/pulsar/instances/java-instance.jar:${EXTRA_CLASSPATH}
 
 JAVA=$(which java)
 
@@ -15,27 +34,58 @@ CMD=$(cat<<EOF
   -Dpulsar.functions.python.instance.file=/pulsar/instances/python-instance/python_instance_main.py \
   -Dpulsar.functions.extra.dependencies.dir=/instances/deps \
   -Dlog4j.configurationFile=/conf/log4j.properties \
-  -Djute.maxbuffer=10485760 \
-  -Djava.net.preferIPv4Stack=true \
+  -Djute.maxbuffer=${MAX_BUFFER} \
   -javaagent:/pulsar/lib/org.aspectj-aspectjweaver-1.9.2.jar \
-  -Dio.netty.leakDetectionLevel=disabled \
-  -Dio.netty.recycler.maxCapacity.default=1000 \
-  -Dio.netty.recycler.linkCapacity=1024" \
-  $MEM_OPTS \
-  $GC_OPTS \
-  $NETTY_OPTS \
+  ${IPSTACK} \
+  ${MEM_OPTS} \
+  ${GC_OPTS} \
+  ${NETTY_OPTS} \
+  ${PROMETHEUS} \
   -cp ${CLASSPATH} \
   ${EXPTRA_OPTS}
 EOF
 )
 
-${CMD} org.apache.pulsar.PulsarClusterMetadataSetup \
-  --cluster pulsar \
-  --zookeeper $(grep zookeeperServers /conf/pulsar.conf | grep -v '#' | cut -d'=' -f2) \
-  --configuration-store $(grep configurationStore /conf/pulsar.conf | grep -v '#'| cut -d'=' -f2 | cut -d',' -f1) \
-  --web-service-url http://localhost:8080 \
-  --web-service-url-tls https://localhost:8443 \
-  --broker-service-url pulsar://localhost:6650 \
-  --broker-service-url-tls pulsar+ssl://localhost:6651
+function _init(){
+  echo 'Running initialization.......'
+  OUTPUT=$(${CMD} org.apache.pulsar.PulsarClusterMetadataSetup \
+    --cluster pulsar \
+    --zookeeper $(grep zookeeperServers /conf/pulsar.conf | grep -v '#' | cut -d'=' -f2) \
+    --configuration-store $(grep configurationStore /conf/pulsar.conf | grep -v '#'| cut -d'=' -f2 | cut -d',' -f1) \
+    --web-service-url http://localhost:8080 \
+    --web-service-url-tls https://localhost:8443 \
+    --broker-service-url pulsar://localhost:6650 \
+    --broker-service-url-tls pulsar+ssl://localhost:6651 2>&1
+  )
+  if echo "${OUTPUT}" | grep 'NodeExists for /'; then
+    echo 'Cluster was already initialized......'
+    return
+  elif [[ "$?" -ne 0 ]]; then
+    echo "Cluster initialization failed: "
+    echo "${OUTPUT}"
+    exit 1
+  else
+    echo "Cluster initialized: "
+    echo "${OUTPUT}"
+    return
+  fi
+}
 
-$CMD org.apache.pulsar.PulsarBrokerStarter --broker-conf /conf/pulsar.conf $@
+case $1 in
+  -broker)
+    shift
+    _init
+    ${CMD} org.apache.pulsar.PulsarBrokerStarter --broker-conf /conf/pulsar.conf "$@"
+    ;;
+  -client)
+    shift
+    ${CMD} org.apache.pulsar.client.cli.PulsarClientTool /conf/client.conf "$@"
+    ;;
+  -admin)
+    shift
+    ${CMD} org.apache.pulsar.admin.cli.PulsarAdminTool /conf/client.conf "$@"
+    ;;
+  *)
+    usage
+    exit 0
+esac
