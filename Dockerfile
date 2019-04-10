@@ -43,6 +43,7 @@ RUN set -ex && \
 COPY pulsar /pulsar/bin
 COPY log4j.properties /conf
 COPY pulsar.conf /conf
+COPY pulsar.conf /conf/client.conf
 COPY prometheus.yml /conf
 
 RUN chmod +x /pulsar/bin/*
