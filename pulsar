@@ -48,8 +48,10 @@ EOF
 
 function _init(){
   echo 'Running initialization.......'
+  [ -z "${CLUSTER}" ] && CLUSTER=$(grep clusterName /conf/pulsar.conf | cut -d '=' -f2) # Try the config if we haven't set a variable
+  [ -z "${CLUSTER}" ] && CLUSTER=pulsar # Fail safe
   OUTPUT=$(${CMD} org.apache.pulsar.PulsarClusterMetadataSetup \
-    --cluster pulsar \
+    --cluster ${CLUSTER} \
     --zookeeper $(grep zookeeperServers /conf/pulsar.conf | grep -v '#' | cut -d'=' -f2) \
     --configuration-store $(grep configurationStore /conf/pulsar.conf | grep -v '#'| cut -d'=' -f2 | cut -d',' -f1) \
     --web-service-url http://localhost:8080 \
