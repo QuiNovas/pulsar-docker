@@ -13,21 +13,21 @@ RUN set -ex && \
     apk add --no-cache bash \
       su-exec && \
     adduser -D pulsar && \
-    wget -nv "https://www.apache.org/dist/pulsar/pulsar-2.3.0/apache-pulsar-2.3.0-bin.tar.gz" && \
-    wget -nv "https://www.apache.org/dist/pulsar/pulsar-2.3.0/apache-pulsar-2.3.0-bin.tar.gz.asc" && \
-    wget -nv "https://www.apache.org/dist/pulsar/pulsar-2.3.0/apache-pulsar-2.3.0-bin.tar.gz.sha512" && \
-    sha512sum -c apache-pulsar-2.3.0-bin.tar.gz.sha512 && \
+    wget -nv "https://www.apache.org/dist/pulsar/pulsar-2.3.1/apache-pulsar-2.3.1-bin.tar.gz" && \
+    wget -nv "https://www.apache.org/dist/pulsar/pulsar-2.3.1/apache-pulsar-2.3.1-bin.tar.gz.asc" && \
+    wget -nv "https://www.apache.org/dist/pulsar/pulsar-2.3.1/apache-pulsar-2.3.1-bin.tar.gz.sha512" && \
+    sha512sum -c apache-pulsar-2.3.1-bin.tar.gz.sha512 && \
     gpg --keyserver ha.pool.sks-keyservers.net --recv-key "AC055FD2" && \
-    gpg --batch --verify "apache-pulsar-2.3.0-bin.tar.gz.asc" "apache-pulsar-2.3.0-bin.tar.gz" && \
-    tar -xzf "apache-pulsar-2.3.0-bin.tar.gz" && \
-    mv apache-pulsar-2.3.0 /pulsar && \
-    wget -nv https://www.apache.org/dist/pulsar/pulsar-2.3.0/apache-pulsar-offloaders-2.3.0-bin.tar.gz && \
-    wget -nv https://www.apache.org/dist/pulsar/pulsar-2.3.0/apache-pulsar-offloaders-2.3.0-bin.tar.gz.asc && \
-    wget -nv https://www.apache.org/dist/pulsar/pulsar-2.3.0/apache-pulsar-offloaders-2.3.0-bin.tar.gz.sha512 && \
-    sha512sum -c apache-pulsar-offloaders-2.3.0-bin.tar.gz.sha512 && \
-    gpg --batch --verify apache-pulsar-offloaders-2.3.0-bin.tar.gz.asc apache-pulsar-offloaders-2.3.0-bin.tar.gz && \
-    tar zxfv apache-pulsar-offloaders-2.3.0-bin.tar.gz && \
-    mv apache-pulsar-offloaders-2.3.0/offloaders/ /pulsar/ && \
+    gpg --batch --verify "apache-pulsar-2.3.1-bin.tar.gz.asc" "apache-pulsar-2.3.1-bin.tar.gz" && \
+    tar -xzf "apache-pulsar-2.3.1-bin.tar.gz" && \
+    mv apache-pulsar-2.3.1 /pulsar && \
+    wget -nv https://www.apache.org/dist/pulsar/pulsar-2.3.1/apache-pulsar-offloaders-2.3.1-bin.tar.gz && \
+    wget -nv https://www.apache.org/dist/pulsar/pulsar-2.3.1/apache-pulsar-offloaders-2.3.1-bin.tar.gz.asc && \
+    wget -nv https://www.apache.org/dist/pulsar/pulsar-2.3.1/apache-pulsar-offloaders-2.3.1-bin.tar.gz.sha512 && \
+    sha512sum -c apache-pulsar-offloaders-2.3.1-bin.tar.gz.sha512 && \
+    gpg --batch --verify apache-pulsar-offloaders-2.3.1-bin.tar.gz.asc apache-pulsar-offloaders-2.3.1-bin.tar.gz && \
+    tar zxfv apache-pulsar-offloaders-2.3.1-bin.tar.gz && \
+    mv apache-pulsar-offloaders-2.3.1/offloaders/ /pulsar/ && \
     mkdir /conf && \
     wget -nv -O jmx_prometheus_javaagent-0.11.0.jar https://repo1.maven.org/maven2/io/prometheus/jmx/jmx_prometheus_javaagent/0.11.0/jmx_prometheus_javaagent-0.11.0.jar && \
     wget -nv https://repo1.maven.org/maven2/io/prometheus/jmx/jmx_prometheus_javaagent/0.11.0/jmx_prometheus_javaagent-0.11.0.jar.asc && \
