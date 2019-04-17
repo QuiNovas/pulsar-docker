@@ -50,14 +50,23 @@ function _init(){
   echo 'Running initialization.......'
   [ -z "${CLUSTER}" ] && CLUSTER=$(grep clusterName /conf/pulsar.conf | cut -d '=' -f2) # Try the config if we haven't set a variable
   [ -z "${CLUSTER}" ] && CLUSTER=pulsar # Fail safe
+  [ -z "${SERVICE_URL}" ] && SERVICE_URL=localhost
+  [ -z "${HTTP_PORT}" ] && HTTP_PORT=$(grep 'webServicePort=' /conf/pulsar.conf | cut -d '=' -f2)
+  [ -z "${HTTP_PORT}" ] && HTTP_PORT=8080
+  [ -z "${HTTPS_PORT}" ] && HTTPS_PORT=$(grep 'webServicePortTls=' /conf/pulsar.conf | cut -d '=' -f2)
+  [ -z "${HTTPS_PORT}" ] && HTTPS_PORT=8443
+  [ -z "${BROKER_PORT}" ] && BROKER_PORT=$(grep 'brokerServicePort=' /conf/pulsar.conf | cut -d '=' -f2)
+  [ -z "${BROKER_PORT}" ] && BROKER_PORT=6650
+  [ -z "${BROKER_TLS_PORT}" ] && BROKER_TLS_PORT=$(grep 'brokerServicePortTls=' /conf/pulsar.conf | cut -d '=' -f2)
+  [ -z "${BROKER_TLS_PORT}" ] && BROKER_TLS_PORT=6651
   OUTPUT=$(${CMD} org.apache.pulsar.PulsarClusterMetadataSetup \
     --cluster ${CLUSTER} \
     --zookeeper $(grep zookeeperServers /conf/pulsar.conf | grep -v '#' | cut -d'=' -f2) \
     --configuration-store $(grep configurationStore /conf/pulsar.conf | grep -v '#'| cut -d'=' -f2 | cut -d',' -f1) \
-    --web-service-url http://localhost:8080 \
-    --web-service-url-tls https://localhost:8443 \
-    --broker-service-url pulsar://localhost:6650 \
-    --broker-service-url-tls pulsar+ssl://localhost:6651 2>&1
+    --web-service-url http://${SERVICE_URL}:${HTTP_PORT} \
+    --web-service-url-tls https://${SERVICE_URL}:${HTTPS_PORT} \
+    --broker-service-url pulsar://${SERVICE_URL}:${BROKER_PORT} \
+    --broker-service-url-tls pulsar+ssl://${SERVICE_URL}:${BROKER_TLS_PORT} 2>&1
   )
   if echo "${OUTPUT}" | grep 'NodeExists for /'; then
     echo 'Cluster was already initialized......'
