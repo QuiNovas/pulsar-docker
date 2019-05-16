@@ -30,10 +30,6 @@ RUN set -ex && \
     tar zxfv apache-pulsar-offloaders-2.3.1-bin.tar.gz && \
     mv apache-pulsar-offloaders-2.3.1/offloaders/ /pulsar/ && \
     mkdir /conf && \
-    wget -nv -O jmx_prometheus_javaagent-0.11.0.jar https://repo1.maven.org/maven2/io/prometheus/jmx/jmx_prometheus_javaagent/0.11.0/jmx_prometheus_javaagent-0.11.0.jar && \
-    wget -nv https://repo1.maven.org/maven2/io/prometheus/jmx/jmx_prometheus_javaagent/0.11.0/jmx_prometheus_javaagent-0.11.0.jar.asc && \
-    wget -nv https://repo1.maven.org/maven2/io/prometheus/jmx/jmx_prometheus_javaagent/0.11.0/jmx_prometheus_javaagent-0.11.0.jar.md5 && \
-    mv jmx_prometheus_javaagent-0.11.0.jar /usr/bin/ && \
     rm -rf ./* && \
     rm -rf /pulsar/bin/* && \
     apk del --no-cache .build-deps
@@ -43,7 +39,6 @@ COPY pulsar /pulsar/bin
 COPY log4j.properties /conf
 COPY pulsar.conf /conf
 COPY pulsar.conf /conf/client.conf
-COPY prometheus.yml /conf
 
 RUN chmod +x /pulsar/bin/*
 

@@ -22,8 +22,6 @@ IPSTACK="-Djava.net.preferIPv4Stack=true"
 [ -z "${GC_OPTS}" ] && GC_OPTS="-XX:+UseG1GC -XX:MaxGCPauseMillis=10 -XX:+ParallelRefProcEnabled -XX:+UnlockExperimentalVMOptions -XX:+AggressiveOpts -XX:+DoEscapeAnalysis -XX:ParallelGCThreads=32 -XX:ConcGCThreads=32 -XX:G1NewSizePercent=50 -XX:+DisableExplicitGC -XX:-ResizePLAB"
 [ -z "${NETTY_OPTS}" ] && NETTY_OPTS="-Dio.netty.leakDetectionLevel=disabled -Dio.netty.recycler.maxCapacity.default=1000 -Dio.netty.recycler.linkCapacity=1024"
 [ -z "${MAX_BUFFER}" ] && MAX_BUFFER=10485760
-[ -z "${PROMETHEUS_PORT}" ] && PROMETHEUS_PORT=7070
-[ -z "${WHITHOUT_PROMETHEUS}" ] && PROMETHEUS="-javaagent:/usr/bin/jmx_prometheus_javaagent-0.11.0.jar=${PROMETHEUS_PORT}:/config/prometheus.yml
 CLASSPATH=$(find /pulsar/lib/ /pulsar/offloaders -name *.jar | grep -v presto | grep -v 'logging.log4j-log4j-slf4j-impl-2.10.0.jar' | tr '\n' ':' | sed 's/:$//'):/pulsar/instances/java-instance.jar:${EXTRA_CLASSPATH}
 
 JAVA=$(which java)
@@ -40,7 +38,6 @@ CMD=$(cat<<EOF
   ${MEM_OPTS} \
   ${GC_OPTS} \
   ${NETTY_OPTS} \
-  ${PROMETHEUS} \
   -cp ${CLASSPATH} \
   ${EXPTRA_OPTS}
 EOF
@@ -59,7 +56,8 @@ function _init(){
   [ -z "${BROKER_PORT}" ] && BROKER_PORT=6650
   [ -z "${BROKER_TLS_PORT}" ] && BROKER_TLS_PORT=$(grep 'brokerServicePortTls=' /conf/pulsar.conf | cut -d '=' -f2)
   [ -z "${BROKER_TLS_PORT}" ] && BROKER_TLS_PORT=6651
-  OUTPUT=$(${CMD} org.apache.pulsar.PulsarClusterMetadataSetup \
+
+  OPTS=$(cat<<EOF
     --cluster ${CLUSTER} \
     --zookeeper $(grep zookeeperServers /conf/pulsar.conf | grep -v '#' | cut -d'=' -f2) \
     --configuration-store $(grep configurationStore /conf/pulsar.conf | grep -v '#'| cut -d'=' -f2 | cut -d',' -f1) \
@@ -67,7 +65,13 @@ function _init(){
     --web-service-url-tls https://${SERVICE_URL}:${HTTPS_PORT} \
     --broker-service-url pulsar://${SERVICE_URL}:${BROKER_PORT} \
     --broker-service-url-tls pulsar+ssl://${SERVICE_URL}:${BROKER_TLS_PORT} 2>&1
+EOF
+    )
+
+  OUTPUT=$(${CMD} org.apache.pulsar.PulsarClusterMetadataSetup \
+    ${OPTS}
   )
+
   if echo "${OUTPUT}" | grep 'NodeExists for /'; then
     echo 'Cluster was already initialized......'
     return

@@ -1,7 +1,0 @@
-startDelaySeconds: 0
-hostPort: 0.0.0.0:7070
-username:
-password:
-ssl: false
-lowercaseOutputName: false
-lowercaseOutputLabelNames: false
