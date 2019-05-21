@@ -64,7 +64,7 @@ function _init(){
     --web-service-url http://${SERVICE_URL}:${HTTP_PORT} \
     --web-service-url-tls https://${SERVICE_URL}:${HTTPS_PORT} \
     --broker-service-url pulsar://${SERVICE_URL}:${BROKER_PORT} \
-    --broker-service-url-tls pulsar+ssl://${SERVICE_URL}:${BROKER_TLS_PORT} 2>&1
+    --broker-service-url-tls pulsar+ssl://${SERVICE_URL}:${BROKER_TLS_PORT}
 EOF
   )
 
