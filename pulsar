@@ -69,7 +69,7 @@ EOF
   )
 
   OUTPUT=$(${CMD} org.apache.pulsar.PulsarClusterMetadataSetup \
-    ${OPTS}
+    ${OPTS} 2>&1
   )
 
   if echo "${OUTPUT}" | grep -q 'NodeExists for /'; then
