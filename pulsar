@@ -14,7 +14,7 @@ EOF
 }
 
 IPSTACK="-Djava.net.preferIPv4Stack=true"
-[ ! -z "${PREFER_IPV6}" ] && IPSTACK="-Djava.net.preferIPv4Stack=false
+[ ! -z "${PREFER_IPV6}" ] && IPSTACK="-Djava.net.preferIPv4Stack=false"
 [ -z "${MIN_HEAP}" ] && MIN_HEAP=2g
 [ -z "${MAX_HEAP}" ] && MAX_HEAP=2g
 [ -z "${MAX_DIRECT_MEMORY}" ] && MAX_DIRECT_MEMORY=4g
@@ -66,13 +66,13 @@ function _init(){
     --broker-service-url pulsar://${SERVICE_URL}:${BROKER_PORT} \
     --broker-service-url-tls pulsar+ssl://${SERVICE_URL}:${BROKER_TLS_PORT} 2>&1
 EOF
-    )
+  )
 
   OUTPUT=$(${CMD} org.apache.pulsar.PulsarClusterMetadataSetup \
     ${OPTS}
   )
 
-  if echo "${OUTPUT}" | grep 'NodeExists for /'; then
+  if echo "${OUTPUT}" | grep -q 'NodeExists for /'; then
     echo 'Cluster was already initialized......'
     return
   elif [[ "$?" -ne 0 ]]; then
